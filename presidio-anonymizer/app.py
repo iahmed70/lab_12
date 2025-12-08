@@ -4,13 +4,14 @@ import logging
 import os
 from logging.config import fileConfig
 from pathlib import Path
-from presidio_anonymizer.operators.genz import GenZ
 
 from flask import Flask, Response, jsonify, request
+from werkzeug.exceptions import BadRequest, HTTPException
+
 from presidio_anonymizer import AnonymizerEngine, DeanonymizeEngine
 from presidio_anonymizer.entities import InvalidParamError, OperatorConfig
+from presidio_anonymizer.operators.genz import GenZ
 from presidio_anonymizer.services.app_entities_convertor import AppEntitiesConvertor
-from werkzeug.exceptions import BadRequest, HTTPException
 
 DEFAULT_PORT = "3000"
 
@@ -40,7 +41,7 @@ class Server:
 
         # Initialize engine and register GenZ
         self.anonymizer = AnonymizerEngine()
-        self.anonymizer.add_anonymizer(GenZ)  # <-- Fixed here
+        self.anonymizer.add_anonymizer(GenZ)
 
         self.deanonymize = DeanonymizeEngine()
         self.logger.info(WELCOME_MESSAGE)
@@ -55,7 +56,7 @@ class Server:
             """Return an example Gen-Z anonymization preview."""
             example_data = {
                 "example": "Call Emily at 577-988-1234",
-                "example output": "Call GOAT at vibe check",
+                "example_output": "Call GOAT at vibe check",
                 "description": "Example output of the genz anonymizer."
             }
             return jsonify(example_data)
@@ -73,7 +74,10 @@ class Server:
             )
 
             # Build operators dict to use GenZ for each detected entity type
-            operators = {res.entity_type: OperatorConfig("genz", {}) for res in analyzer_results}
+            operators = {
+                res.entity_type: OperatorConfig("genz", {})
+                for res in analyzer_results
+            }
 
             # Perform anonymization
             anonymizer_result = self.anonymizer.anonymize(

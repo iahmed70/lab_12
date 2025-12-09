@@ -48,3 +48,10 @@ def __get_multipart_form_data(file):
             "image": (file.name, file, "multipart/form-data"),
         }
     return multipart_form_data
+
+def genz(data):
+    """POST to /genz endpoint (used by e2e test for the genz anonymizer)."""
+    response = requests.post(
+        f"{ANONYMIZER_BASE_URL}/genz", data=data, headers=DEFAULT_HEADERS
+    )
+    return response.status_code, response.content

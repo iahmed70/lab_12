@@ -3,7 +3,7 @@ import json
 import pytest
 
 from common.assertions import equal_json_strings
-from common.methods import anonymize, anonymizers, deanonymize
+from common.methods import anonymize, anonymizers, deanonymize, genz
 
 
 @pytest.mark.api
@@ -401,3 +401,43 @@ def test_overlapping_keep_both():
 
     assert response_status == 200
     assert equal_json_strings(expected_response, response_content)
+
+
+@pytest.mark.api
+def test_given_anonymize_called_with_genz_then_expected_valid_response_returned():
+    # Request body from the assignment (Step 6)
+    request_body = """
+    {
+        "text": "Please contact Emily Carter at 734-555-9284 if you have questions about the workshop registration.",
+        "analyzer_results": [
+            {
+                "start": 15,
+                "end": 27,
+                "score": 0.3,
+                "entity_type": "PERSON"
+            },
+            {
+                "start": 31,
+                "end": 43,
+                "score": 0.95,
+                "entity_type": "PHONE_NUMBER"
+            }
+        ]
+    }
+    """
+
+    response_status, response_content = genz(request_body)
+
+    # The genz operator is random, so we can't assert exact text.
+    # Check the status and basic JSON shape instead.
+    assert response_status == 200
+
+    # Validate the response is valid JSON and contains expected keys
+    try:
+        parsed = json.loads(response_content)
+    except Exception:
+        pytest.fail("Response is not valid JSON")
+
+    assert "text" in parsed and isinstance(parsed["text"], str)
+    # items should exist and be a list (can be empty only in weird cases)
+    assert "items" in parsed and isinstance(parsed["items"], list)
